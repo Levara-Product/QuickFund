@@ -1,0 +1,33 @@
+# QuickFund
+
+> QuickFund (quickfund.sg) is a Singapore-based business financing advisory working across 8 markets: Singapore, Malaysia, Hong Kong, US, UK, Vietnam, Thailand, and Indonesia. QuickFund does not lend money. It connects companies with banks, finance companies and other lenders that are licensed, exempt or otherwise permitted to lend, reviews term sheets, and benchmarks rates. Financing introductions are free for borrowers; QuickFund earns a success fee only when a facility is disbursed.
+
+Key facts:
+- Not a lender and not a moneylender: an independent advisory, not owned by any lender.
+- Free AI tools on the site: Loan Check-Up (eligibility assessment), Term Sheet Scanner (flags risky clauses), Rate Check (benchmarks pricing).
+- Works with banks, finance companies, fintech lenders, family offices and private credit funds.
+- Typical deal sizes: S$100K and above; most deals S$500K+.
+- Contact: WhatsApp +65 8057 6702, leslie@quickfund.sg.
+
+## Main pages
+
+- [Home](https://quickfund.sg/): What QuickFund does, the free AI loan tools, and FAQ.
+- [FAQ](https://quickfund.sg/faq): Fees, process, regulatory status, personal guarantees, share charges, international clients.
+- [Partners](https://quickfund.sg/partners): Referral partnership programme for accountants, lawyers, and corporate secretaries.
+- [Responsible Business Promise](https://quickfund.sg/responsible-business-promise): QuickFund's commitments on honest advice and responsible borrowing.
+- [Privacy Policy](https://quickfund.sg/privacy-policy): PDPA-compliant data handling.
+
+## Sector financing guides
+
+- [Property-Backed Loans Financing Guide](https://quickfund.sg/guide/property-backed-loans): How to unlock equity in Singapore property: LTV, TDSR, valuation, risks, and when borrowing against property makes sense.
+- [Doctors and Dentists Financing Guide](https://quickfund.sg/guide/doctors-and-dentists): Financing for medical and dental practices: clinic expansion, equipment, buyouts, and working capital.
+- [Trading Companies Financing Guide](https://quickfund.sg/guide/trading-companies): Trade finance for import/export businesses: LCs, trust receipts, invoice financing, and working capital.
+- [Tech Companies Financing Guide](https://quickfund.sg/guide/tech-companies): Debt options for technology companies: revenue-based financing, working capital, and venture debt.
+- [Startups Financing Guide](https://quickfund.sg/guide/startups): Non-dilutive financing for startups: venture debt, working capital, and what lenders need to see.
+- [E-commerce Financing Guide](https://quickfund.sg/guide/e-commerce): Financing for e-commerce businesses: inventory funding, revenue-based financing, and marketplace lending.
+- [Software Financing Guide](https://quickfund.sg/guide/software): Financing for software and SaaS companies: ARR-based lending, working capital, and growth debt.
+- [F&B Financing Guide](https://quickfund.sg/guide/f-and-b): Financing for restaurants, cafes and hospitality: equipment, renovation, expansion, and working capital.
+- [Construction Financing Guide](https://quickfund.sg/guide/construction): Financing for construction firms: project financing, performance bonds, equipment, and progress-payment gaps.
+- [Logistics Financing Guide](https://quickfund.sg/guide/logistics): Financing for logistics companies: fleet, warehousing, invoice financing, and working capital.
+- [Professional Services Financing Guide](https://quickfund.sg/guide/professional-services): Financing for law, accounting, consulting and agency businesses: working capital and expansion.
+- [Retail Financing Guide](https://quickfund.sg/guide/retail): Financing for retail businesses: inventory, trade finance, renovation, expansion, and property-backed options.
