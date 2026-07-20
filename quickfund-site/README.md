@@ -18,7 +18,7 @@ cp .env.example .env.local        # fill in values (see below)
 npm run dev                       # http://localhost:3000
 ```
 
-To try the AI tools **without an Anthropic API key**, set `AI_MOCK=1` — the
+To try the AI tools **without an OpenRouter API key**, set `AI_MOCK=1` — the
 three endpoints return canned, correctly-formatted responses so the whole
 pipeline (validation, rate limiting, lead capture, output filter, result UI)
 can be exercised end to end.
@@ -33,8 +33,11 @@ npm run build && npm run start
 
 Server-side only (never exposed to the browser):
 
-- `ANTHROPIC_API_KEY` — required for real AI responses.
-- `CLAUDE_MODEL` — defaults to `claude-sonnet-4-6`.
+- `OPENROUTER_API_KEY` — required for real AI responses (from
+  [openrouter.ai](https://openrouter.ai)).
+- `OPENROUTER_MODEL` — defaults to `google/gemini-2.5-pro`.
+- `SITE_URL` — sent as the `HTTP-Referer` header on OpenRouter requests
+  (attribution only, not required for requests to work).
 - `LEAD_WEBHOOK_URL` — optional; every lead is POSTed here as JSON. Point it at
   a Zapier/Make webhook or a Google Apps Script that appends to a Sheet/CRM.
   Leads are also appended to `data/leads.jsonl` on disk (dev convenience;
@@ -61,7 +64,7 @@ Public:
   each guide.
 - `app/api/{assess,scan,rate}/route.js` — the three AI endpoints. Pipeline per
   the production notes: **validate input → rate limit → save lead → call
-  Claude → output keyword filter → return**. Specifics:
+  AI (OpenRouter) → output keyword filter → return**. Specifics:
   - `/api/assess`: every answer must exactly match a predefined option from
     `lib/assessOptions.js` (shared with the client wizard) — no freetext ever
     reaches the model.
@@ -160,7 +163,7 @@ Webmaster Tools** (ChatGPT search and several assistants pull from Bing).
 
 ## Still outstanding (needs a human)
 
-- `ANTHROPIC_API_KEY` in the production environment.
+- `OPENROUTER_API_KEY` in the production environment.
 - GA4 property + Meta Pixel IDs.
 - OG images: `/og-image.jpg` (1200×630) and `/og-guide-<slug>.jpg` per guide —
   the meta tags already reference these paths; drop the files into `public/`.
