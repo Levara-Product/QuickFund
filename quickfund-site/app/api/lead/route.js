@@ -1,3 +1,8 @@
+// Vercel defaults serverless functions to 10s; a Claude call regularly needs
+// longer, and the timeout surfaced as a silent failure in the browser.
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 import { saveLead } from "@/lib/leads";
 import { rateLimit } from "@/lib/rateLimit";
 import { json, validContact, clientMeta } from "@/lib/apiHelpers";

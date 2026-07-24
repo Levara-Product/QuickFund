@@ -99,6 +99,9 @@ check("home has FAQPage JSON-LD", '"@type":"FAQPage"' in html and '"@type":"Ques
 check("home has FinancialService JSON-LD", '"@type":"FinancialService"' in html and "Levara Advisory Group" in html)
 st, hd, html = get("/faq")
 check("/faq has FAQPage JSON-LD", '"@type":"FAQPage"' in html)
+for p in ("/partners", "/responsible-business-promise", "/faq", "/privacy-policy"):
+    st, hd, html = get(p)
+    check(f"footer nav on {p}", st == 200 and html.count("/guide/") >= 12 and ">Guides<" in html)
 st, hd, html = get("/guide/does-not-exist")
 check("unbuilt guide slug -> custom 404", st == 404 and ("coming soon" in html.lower() or "WhatsApp" in html))
 
@@ -190,6 +193,19 @@ if _tok:
           any(l.get("aiResult") and "[AI_MOCK]" in l["aiResult"] for l in lead_list), f"n={len(lead_list)}")
 else:
     print("  SKIP  admin API checks (set ADMIN_TOKEN to enable)")
+
+print("== 6c. Timeout + failure-path guards ==")
+import glob as _glob
+_routes = [p for p in _glob.glob("app/api/*/route.js")]
+check("all API routes set maxDuration (Vercel 10s default would time out)",
+      len(_routes) == 4 and all("maxDuration = 60" in open(p).read() for p in _routes))
+_qf = open("components/pages/QF.jsx").read()
+check("client handles non-JSON/timeout responses", "postTool" in _qf and "AbortSignal.timeout" in _qf
+      and _qf.count("postTool(\"/api/") == 3)
+check("Start Here button restarts the Check-Up", "setRunKey(k=>k+1)" in _qf and "<LoanCheckup key={runKey}/>" in _qf)
+
+check("result screen states when the copy arrives (channel-specific)",
+      "What happens next:" in _qf and "one working day (Mon\u2013Fri" in _qf and "sentTo" in _qf)
 
 print("== 7. aiGuard unit checks ==")
 unit = subprocess.run(["node", "--input-type=module", "-e", '''

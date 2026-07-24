@@ -1,0 +1,48 @@
+PATCH 2026-07-19 — apply over the existing repo (6 files)
+
+Apply:  unzip -o quickfund-patch-2026-07-19.zip -d /path/to/quickfund-site
+Then:   one build + one deploy (no dependency or config changes).
+
+WHAT WAS BROKEN
+
+1. "Show My Results" spun, then nothing happened.
+   Root cause: Vercel defaults serverless functions to a 10s timeout. A Claude
+   call routinely needs longer, so the function was killed mid-flight and
+   Vercel returned a 504 HTML error page. The client called r.json() on that
+   HTML, which threw, and the error was swallowed — so the spinner just
+   stopped. It was never a missing screen: the result screen works, the call
+   never returned.
+   Fix: all 4 API routes now export maxDuration = 60 (and runtime = "nodejs").
+   Plus the client is now fail-loud: a shared postTool() helper handles
+   non-JSON responses, network drops and timeouts, and always surfaces a
+   readable message with the WhatsApp fallback number.
+
+2. "Loan Check-Up — Start Here" did nothing when clicked.
+   Root cause: my bug from the tools-card restructure. The button only set the
+   active tab, and Check-Up is already the default tab, so the click was a
+   no-op — including when the user was parked on the contact gate.
+   Fix: it now restarts the Check-Up from question 1 (remounts via key).
+
+3. Delivery expectation was vague ("usually within one working day").
+   The result screen now tells the user exactly what happens next, naming
+   their channel and address: "a member of our team will email a copy of this
+   assessment to name@company.com ... normally within one working day (Mon-Fri,
+   Singapore time). It's sent by a person, not automatically, so it won't
+   arrive instantly" + a WhatsApp link for anyone who can't wait. The contact
+   gate carries the same Mon-Fri wording.
+   NOTE: nothing is emailed automatically. This is the manual follow-up we
+   agreed; the copy now states that honestly. Automatic sending would need an
+   email provider (e.g. Resend) and is not in this patch.
+
+CHANGED FILES
+  components/pages/QF.jsx        postTool helper; 3 submit handlers; Start Here restarts wizard
+  app/api/assess/route.js        runtime + maxDuration = 60
+  app/api/scan/route.js          runtime + maxDuration = 60
+  app/api/rate/route.js          runtime + maxDuration = 60
+  app/api/lead/route.js          runtime + maxDuration = 60
+  scripts/verify.py              +3 checks (57 total, all green on this build)
+
+NOTE ON VERCEL PLAN
+maxDuration = 60 is allowed on Hobby and Pro. If a request ever still exceeds
+it, the user now sees a clear "took too long, WhatsApp us" message instead of
+a dead spinner.

@@ -56,7 +56,33 @@ function FloatingWA() {
 }
 
 /* ── CONTACT GATE ── */
-function ContactGate({ onSubmit, loading }) {
+/* Shared tool POST. Never leaves the user with a silent failure: handles
+   non-JSON responses (e.g. a Vercel 504 HTML page), network drops and
+   timeouts, and always returns a message the UI can show. */
+async function postTool(url, payload) {
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(58000),
+    });
+    let d = null;
+    try { d = await r.json(); } catch { d = null; }
+    if (d && d.result) return { result: d.result };
+    if (d && d.error) return { error: d.error };
+    if (r.status === 504 || r.status === 502)
+      return { error: "The assessment took longer than the server allows. Please try again \u2014 or WhatsApp us at +65 8057 6702 and we'll run it for you." };
+    return { error: `Couldn't generate right now (error ${r.status}). Please try again, or WhatsApp us at +65 8057 6702.` };
+  } catch (e) {
+    const timedOut = e && (e.name === "TimeoutError" || e.name === "AbortError");
+    return { error: timedOut
+      ? "That took too long to generate. Please try again \u2014 or WhatsApp us at +65 8057 6702."
+      : "Couldn't reach the server. Check your connection and try again, or WhatsApp us at +65 8057 6702." };
+  }
+}
+
+function ContactGate({ onSubmit, loading, error }) {
   const [email, setEmail] = useState("");
   const [wa, setWa] = useState("");
   const [method, setMethod] = useState("whatsapp");
@@ -86,6 +112,7 @@ function ContactGate({ onSubmit, loading }) {
       ) : (
         <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@company.com" className="qf-input" style={{ width: "100%" }} />
       )}
+      {error && <p style={{fontFamily:"Figtree, sans-serif",fontSize:12.5,color:"#B3261E",marginBottom:10}}>{error}</p>}
       <button onClick={() => onSubmit({ email, wa, method })} disabled={!ok || loading} style={{
         width: "100%", padding: "13px", marginTop: 14, background: !ok ? C.greyLight : C.orange,
         border: "none", borderRadius: 8, fontFamily: "Poppins, sans-serif", fontSize: 14, fontWeight: 700,
@@ -94,13 +121,18 @@ function ContactGate({ onSubmit, loading }) {
       }}>
         {loading ? <><span className="qf-spinner" />Generating...</> : <>Show My Results</>}
       </button>
-      <p style={{ fontFamily: "Figtree, sans-serif", fontSize: 10.5, color: C.grey, lineHeight: 1.55, marginTop: 10, padding: "8px 10px", background: C.cream, borderRadius: 6 }}>Your answers are processed by a third-party AI (large language model) to generate this assessment. The result is general information, not financial advice. Verify terms with the lender and your own advisers. Please don't include sensitive personal identifiers or confidential details beyond what the tool asks for — to the extent permitted by law, anything you choose to include is submitted at your own risk. You'll see your results on screen right away. Our team will also personally send you a copy and follow up — usually within one working day. No spam beyond that. By continuing you agree to our <a href="/privacy-policy" style={{ color: C.grey }}>Privacy Policy</a>.</p>
+      <p style={{ fontFamily: "Figtree, sans-serif", fontSize: 10.5, color: C.grey, lineHeight: 1.55, marginTop: 10, padding: "8px 10px", background: C.cream, borderRadius: 6 }}>Your answers are processed by a third-party AI (large language model) to generate this assessment. The result is general information, not financial advice. Verify terms with the lender and your own advisers. Please don't include sensitive personal identifiers or confidential details beyond what the tool asks for — to the extent permitted by law, anything you choose to include is submitted at your own risk. You'll see your results on screen right away. Our team will also personally send you a copy and follow up — normally within one working day (Mon–Fri), sent by a person rather than automatically. No spam beyond that. By continuing you agree to our <a href="/privacy-policy" style={{ color: C.grey }}>Privacy Policy</a>.</p>
     </div>
   );
 }
 
 /* ── AI RESULT ── */
-function AiResult({ result, onReset }) {
+function AiResult({ result, onReset, sentTo }) {
+  const dest = sentTo && sentTo.method === "email" && sentTo.email
+    ? { what: "email a copy of this assessment to", who: sentTo.email }
+    : sentTo && sentTo.method === "whatsapp" && sentTo.wa
+      ? { what: "send a copy of this assessment to your WhatsApp on", who: "+65 " + sentTo.wa }
+      : null;
   const sections = [];
   for (const line of result.split("\n").filter(l => l.trim())) {
     const t = line.trim();
@@ -126,7 +158,15 @@ function AiResult({ result, onReset }) {
         <span style={{ fontFamily: "Figtree, sans-serif", fontSize: 10, color: C.greyLight }}>Free at quickfund.sg</span>
         <span style={{ fontFamily: "Figtree, sans-serif", fontSize: 10, color: C.greyLight }}>Try it yourself</span>
       </div>
-      <p style={{ fontFamily: "Figtree, sans-serif", fontSize: 11, color: C.grey, lineHeight: 1.5, marginTop: 10 }}>Our team will personally send you a copy of this assessment and follow up — usually within one working day.</p>
+      <div style={{ marginTop: 12, padding: "10px 12px", background: C.cream, borderRadius: 8, display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <Bolt size={12} style={{ flexShrink: 0, marginTop: 2 }} />
+        <p style={{ fontFamily: "Figtree, sans-serif", fontSize: 12, color: C.black, lineHeight: 1.55, margin: 0 }}>
+          <span style={{ fontWeight: 600 }}>What happens next:</span> {dest
+            ? <>a member of our team will {dest.what} <span style={{ fontWeight: 600 }}>{dest.who}</span>, and follow up personally — normally within one working day (Mon–Fri, Singapore time). It's sent by a person, not automatically, so it won't arrive instantly.</>
+            : <>a member of our team will send you a copy of this assessment and follow up personally — normally within one working day (Mon–Fri, Singapore time). It's sent by a person, not automatically, so it won't arrive instantly.</>}
+          {" "}Can't wait? <a href="https://wa.me/6580576702" target="_blank" rel="noopener" style={{ color: C.orange, fontWeight: 600 }}>WhatsApp us now</a>.
+        </p>
+      </div>
       <p style={{ fontFamily: "Figtree, sans-serif", fontSize: 10, color: C.grey, lineHeight: 1.5, marginTop: 8, padding: "8px 10px", background: C.cream, borderRadius: 6 }}>AI-generated general information based on what you entered. Not financial advice. Verify all terms directly with the lender and your own advisers before acting.</p>
       <a href="https://wa.me/6580576702?text=Hi%20QuickFund%2C%20just%20did%20the%20AI%20assessment%20and%20would%20like%20to%20discuss" target="_blank" rel="noopener" style={{
         display: "block", width: "100%", padding: "13px", marginTop: 16, background: C.orange, border: "none", borderRadius: 8,
@@ -147,25 +187,24 @@ function LoanCheckup() {
   const [result, setResult] = useState(null);
   const [err, setErr] = useState(null);
   const [fade, setFade] = useState(false);
-  const [gate, setGate] = useState(false);
+  const [gate, setGate] = useState(false); const [sentTo,setSentTo]=useState(null);
   const cur = STEPS[step]; const last = step === STEPS.length - 1;
 
   const pick = v => { setAns(p => ({...p,[cur.id]:v})); if(!last){setFade(true);setTimeout(()=>{setStep(s=>s+1);setFade(false);},200);} };
   const back = () => { if(gate){setGate(false);return;} if(step>0){setFade(true);setTimeout(()=>{setStep(s=>s-1);setFade(false);},200);} };
 
   const submit = async (contact) => {
-    setLoading(true); setErr(null);
+    setSentTo(contact); setLoading(true); setErr(null);
     try {
-      const r = await fetch("/api/assess", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers: ans, contact }) });
-      const d = await r.json();
-      if (d.result) setResult(d.result); else setErr(d.error || "Couldn't generate. Try again?");
-    } catch { setErr("Something went wrong."); }
+      const d = await postTool("/api/assess", { answers: ans, contact });
+      if (d.result) setResult(d.result); else setErr(d.error);
+    } catch { setErr("Something went wrong. Try again, or WhatsApp us at +65 8057 6702."); }
     setLoading(false);
   };
 
   const reset = () => { setStep(0);setAns({});setResult(null);setErr(null);setGate(false); };
-  if(result) return <AiResult result={result} onReset={reset} />;
-  if(gate) return <ContactGate onSubmit={submit} loading={loading} />;
+  if(result) return <AiResult result={result} onReset={reset} sentTo={sentTo} />;
+  if(gate) return <ContactGate onSubmit={submit} loading={loading} error={err} />;
 
   return (
     <div>
@@ -198,17 +237,16 @@ function LoanCheckup() {
 
 /* ── TERM SHEET SCANNER ── */
 function TermScanner() {
-  const [terms,setTerms]=useState(""); const [loading,setLoading]=useState(false); const [result,setResult]=useState(null); const [err,setErr]=useState(null); const [gate,setGate]=useState(false);
+  const [terms,setTerms]=useState(""); const [loading,setLoading]=useState(false); const [result,setResult]=useState(null); const [err,setErr]=useState(null); const [gate,setGate]=useState(false); const [sentTo,setSentTo]=useState(null);
   const submit = async(contact) => {
-    setLoading(true);setErr(null);    try {
-      const r = await fetch("/api/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ terms, contact }) });
-      const d = await r.json();
-      if (d.result) setResult(d.result); else setErr(d.error || "Try again.");
-    } catch{setErr("Try again.");} setLoading(false);
+    setSentTo(contact); setLoading(true);setErr(null);    try {
+      const d = await postTool("/api/scan", { terms, contact });
+      if (d.result) setResult(d.result); else setErr(d.error);
+    } catch{setErr("Something went wrong. Try again, or WhatsApp us at +65 8057 6702.");} setLoading(false);
   };
   const reset=()=>{setTerms("");setResult(null);setErr(null);setGate(false);};
-  if(result) return <AiResult result={result} onReset={reset}/>;
-  if(gate) return <ContactGate onSubmit={submit} loading={loading}/>;
+  if(result) return <AiResult result={result} onReset={reset} sentTo={sentTo} />;
+  if(gate) return <ContactGate onSubmit={submit} loading={loading} error={err} />;
   return (<div>
     <p style={{fontFamily:"Figtree, sans-serif",fontSize:13,color:C.grey,marginBottom:8}}>Paste the key terms from your loan offer. Interest, fees, covenants, security, repayment.</p>
     <p style={{fontFamily:"Figtree, sans-serif",fontSize:11.5,color:C.grey,marginBottom:12,padding:"7px 10px",background:C.cream,borderRadius:6}}>Paste terms only — leave out names, NRIC/passport numbers, account numbers, and anything else sensitive. The scan works just as well without them. To the extent permitted by law, information you choose to include is submitted at your own risk.</p>
@@ -220,18 +258,17 @@ function TermScanner() {
 
 /* ── RATE CHECK ── */
 function RateCheck() {
-  const [f,sF]=useState({type:"",rate:"",amount:""}); const [loading,setLoading]=useState(false); const [result,setResult]=useState(null); const [err,setErr]=useState(null); const [gate,setGate]=useState(false);
+  const [f,sF]=useState({type:"",rate:"",amount:""}); const [loading,setLoading]=useState(false); const [result,setResult]=useState(null); const [err,setErr]=useState(null); const [gate,setGate]=useState(false); const [sentTo,setSentTo]=useState(null);
   const ok=f.type&&f.rate&&f.amount;
   const submit = async(contact) => {
-    setLoading(true);setErr(null);    try {
-      const r = await fetch("/api/rate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: f.type, amount: f.amount, rate: f.rate, contact }) });
-      const d = await r.json();
-      if (d.result) setResult(d.result); else setErr(d.error || "Try again.");
-    } catch{setErr("Try again.");} setLoading(false);
+    setSentTo(contact); setLoading(true);setErr(null);    try {
+      const d = await postTool("/api/rate", { type: f.type, amount: f.amount, rate: f.rate, contact });
+      if (d.result) setResult(d.result); else setErr(d.error);
+    } catch{setErr("Something went wrong. Try again, or WhatsApp us at +65 8057 6702.");} setLoading(false);
   };
   const reset=()=>{sF({type:"",rate:"",amount:""});setResult(null);setErr(null);setGate(false);};
-  if(result) return <AiResult result={result} onReset={reset}/>;
-  if(gate) return <ContactGate onSubmit={submit} loading={loading}/>;
+  if(result) return <AiResult result={result} onReset={reset} sentTo={sentTo} />;
+  if(gate) return <ContactGate onSubmit={submit} loading={loading} error={err} />;
   return (<div>
     <p style={{fontFamily:"Figtree, sans-serif",fontSize:13,color:C.grey,marginBottom:12}}>Tell us what you're paying. We'll benchmark it.</p>
     {[{k:"type",l:"Facility type",ph:"e.g. Term loan, revolving credit"},{k:"amount",l:"Amount",ph:"e.g. S$500K"},{k:"rate",l:"Interest rate / cost",ph:"e.g. 8% p.a., 1.2%/month"}].map(field=>(
@@ -248,9 +285,10 @@ function RateCheck() {
 /* ── TABBED TOOLS ── */
 function Tools() {
   const [tab,setTab]=useState("checkup");
+  const [runKey,setRunKey]=useState(0); // bumping this restarts the Check-Up from question 1
   const pill=(active)=>({flex:1,padding:"10px 8px",background:active?C.orange:"transparent",border:active?`1.5px solid ${C.orange}`:`1.5px solid ${C.greyLight}`,borderRadius:8,cursor:"pointer",fontFamily:"Poppins, sans-serif",fontSize:11,fontWeight:700,color:active?"#fff":C.grey});
   return (<div>
-    <button onClick={()=>setTab("checkup")} style={{width:"100%",padding:"13px 10px",background:tab==="checkup"?C.orange:C.cream,border:`1.5px solid ${C.orange}`,borderRadius:8,cursor:"pointer",fontFamily:"Poppins, sans-serif",fontSize:12.5,fontWeight:800,color:tab==="checkup"?"#fff":C.orange,marginBottom:12}}>
+    <button onClick={()=>{setTab("checkup");setRunKey(k=>k+1);}} style={{width:"100%",padding:"13px 10px",background:tab==="checkup"?C.orange:C.cream,border:`1.5px solid ${C.orange}`,borderRadius:8,cursor:"pointer",fontFamily:"Poppins, sans-serif",fontSize:12.5,fontWeight:800,color:tab==="checkup"?"#fff":C.orange,marginBottom:12}}>
       Loan Check-Up — Start Here
     </button>
     <div style={{display:"flex",alignItems:"center",gap:8,margin:"0 0 10px"}}>
@@ -262,7 +300,7 @@ function Tools() {
       <button onClick={()=>setTab("scan")} style={pill(tab==="scan")}>Review My Terms</button>
       <button onClick={()=>setTab("rate")} style={pill(tab==="rate")}>Check My Rate</button>
     </div>
-    {tab==="checkup"?<LoanCheckup/>:tab==="scan"?<TermScanner/>:<RateCheck/>}
+    {tab==="checkup"?<LoanCheckup key={runKey}/>:tab==="scan"?<TermScanner/>:<RateCheck/>}
   </div>);
 }
 
