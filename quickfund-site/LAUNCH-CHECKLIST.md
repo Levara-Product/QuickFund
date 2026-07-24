@@ -6,11 +6,11 @@ Ordered. Items marked (Zoe) are developer tasks; (Leslie) are founder tasks.
 
 - [ ] (Leslie) Generate the admin token: `openssl rand -base64 32`. Store it in
       a password manager. Never send it over plain chat/email.
-- [ ] (Zoe) Set production env vars: `OPENROUTER_API_KEY`, `ADMIN_TOKEN`,
-      `LEAD_WEBHOOK_URL` (see step 2), optional `OPENROUTER_MODEL`/`SITE_URL`.
-      Ensure `AI_MOCK` is NOT set in production.
+- [ ] (Zoe) Set production env vars: `ANTHROPIC_API_KEY`, `ADMIN_TOKEN`,
+      `LEAD_WEBHOOK_URL` (see step 2), optional `CLAUDE_MODEL`. Ensure
+      `AI_MOCK` is NOT set in production.
 - [ ] (Leslie) Turn on 2FA for: hosting account, domain registrar, Google
-      account that owns the lead Sheet, OpenRouter account. The hosting and
+      account that owns the lead Sheet, Anthropic console. The hosting and
       registrar accounts are now effectively the site's security boundary.
 
 ## 2. Lead pipeline

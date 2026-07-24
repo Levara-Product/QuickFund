@@ -1,6 +1,6 @@
 import { rateLimit } from "@/lib/rateLimit";
 import { saveLead } from "@/lib/leads";
-import { callAI } from "@/lib/ai";
+import { callClaude } from "@/lib/ai";
 import { filterOutput, FALLBACK_RESPONSE, RATE_LIMIT_MSG } from "@/lib/aiGuard";
 
 export function clientMeta(req) {
@@ -22,7 +22,7 @@ export function validContact(contact) {
 export const json = (body, status = 200) => Response.json(body, { status });
 
 // Shared pipeline: rate limit -> lead capture (before AI, never fails the
-// request) -> AI call -> output keyword filter.
+// request) -> Claude -> output keyword filter.
 export async function runTool(req, { tool, payload, system, userContent }) {
   const { ip, ua } = clientMeta(req);
   if (!rateLimit("ai:" + ip).allowed) return json({ error: RATE_LIMIT_MSG }, 429);
@@ -30,7 +30,7 @@ export async function runTool(req, { tool, payload, system, userContent }) {
   await saveLead({ id: leadId, tool, ip, ua, ...payload });
   let text;
   try {
-    text = await callAI({ system, userContent, tool });
+    text = await callClaude({ system, userContent, tool });
   } catch (e) {
     console.error(`${tool} AI call failed:`, e?.message);
     return json({ error: "Couldn't generate. Try again?" }, 502);
