@@ -33,8 +33,17 @@ npm run build && npm run start
 
 Server-side only (never exposed to the browser):
 
-- `ANTHROPIC_API_KEY` — required for real AI responses.
-- `CLAUDE_MODEL` — defaults to `claude-sonnet-4-6`.
+- **AI provider — pick one.** The provider is auto-detected from whichever key
+  is set, and can be forced with `AI_PROVIDER=openrouter|anthropic`.
+  - **OpenRouter**: `OPENROUTER_API_KEY` (keys start `sk-or-`) and
+    `OPENROUTER_MODEL` (slug form, e.g. `anthropic/claude-sonnet-4.6`; browse
+    https://openrouter.ai/models). Requests go to OpenRouter's
+    OpenAI-compatible endpoint.
+  - **Anthropic direct**: `ANTHROPIC_API_KEY` and `CLAUDE_MODEL`
+    (e.g. `claude-sonnet-5`).
+  - An OpenRouter key pasted into `ANTHROPIC_API_KEY` is detected and used
+    correctly, with a warning surfaced by `/api/admin/health`.
+- `SITE_URL` — optional, sent to OpenRouter for dashboard attribution.
 - `LEAD_WEBHOOK_URL` — optional; every lead is POSTed here as JSON. Point it at
   a Zapier/Make webhook or a Google Apps Script that appends to a Sheet/CRM.
   Leads are also appended to `data/leads.jsonl` on disk (dev convenience;
@@ -104,6 +113,21 @@ Public:
 - Unbuilt guide slugs (and anything else unknown) land on the custom 404,
   which points to the AI Loan Check-Up and WhatsApp, per spec.
 - Favicon: the brand bolt as `app/icon.svg` (auto-linked by Next).
+
+## Diagnosing AI failures
+
+`GET /api/admin/health` (admin token required) reports the detected provider,
+the configured model, which env vars are set (never their values), and makes a
+tiny live call returning the real upstream status, error body and a plain
+English diagnosis. On OpenRouter, if the model slug is rejected it also lists
+the Claude slugs the account can actually use.
+
+```bash
+curl -H "Authorization: Bearer $ADMIN_TOKEN" https://<site>/api/admin/health
+```
+
+Vercel > Logs shows the same failure as
+`<tool> AI call failed: OpenRouter <status>: <body>`.
 
 ## Verification
 

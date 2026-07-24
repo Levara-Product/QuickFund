@@ -6,9 +6,12 @@ Ordered. Items marked (Zoe) are developer tasks; (Leslie) are founder tasks.
 
 - [ ] (Leslie) Generate the admin token: `openssl rand -base64 32`. Store it in
       a password manager. Never send it over plain chat/email.
-- [ ] (Zoe) Set production env vars: `ANTHROPIC_API_KEY`, `ADMIN_TOKEN`,
-      `LEAD_WEBHOOK_URL` (see step 2), optional `CLAUDE_MODEL`. Ensure
-      `AI_MOCK` is NOT set in production.
+- [ ] (Zoe) Set production env vars. AI provider — pick one:
+      OpenRouter: `OPENROUTER_API_KEY` + `OPENROUTER_MODEL`
+      (slug form, e.g. `anthropic/claude-sonnet-4.6`), or
+      Anthropic direct: `ANTHROPIC_API_KEY` + `CLAUDE_MODEL`.
+      Plus `ADMIN_TOKEN`, `LEAD_WEBHOOK_URL` (step 2), optional `SITE_URL`.
+      Ensure `AI_MOCK` is NOT set in production.
 - [ ] (Leslie) Turn on 2FA for: hosting account, domain registrar, Google
       account that owns the lead Sheet, Anthropic console. The hosting and
       registrar accounts are now effectively the site's security boundary.
@@ -36,6 +39,19 @@ Ordered. Items marked (Zoe) are developer tasks; (Leslie) are founder tasks.
 - [ ] Drop OG images into `public/`: `/og-image.jpg` (1200×630) and
       `/og-guide-<slug>-guide.jpg` per guide (paths already referenced in
       metadata).
+
+## 3b. If an AI tool says "Couldn't generate"
+
+- [ ] (Zoe) Open `/api/admin/health` with the admin token:
+      `curl -H "Authorization: Bearer $ADMIN_TOKEN" https://<site>/api/admin/health`
+      It reports whether the API key is set, which model is configured, and —
+      if a key is present — the real upstream status and error from Anthropic
+      (invalid key, unknown model name, out of credit, etc). It never returns
+      secret values.
+- [ ] (Zoe) Vercel > Logs also shows the exact upstream error, logged as
+      `assess AI call failed: Anthropic API <status>: <body>`.
+- [ ] Most common causes: ANTHROPIC_API_KEY missing on the deployment; an
+      outdated CLAUDE_MODEL string; no credit on the Anthropic account.
 
 ## 4. Cutover
 

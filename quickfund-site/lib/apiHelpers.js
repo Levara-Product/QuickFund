@@ -33,7 +33,7 @@ export async function runTool(req, { tool, payload, system, userContent }) {
     text = await callClaude({ system, userContent, tool });
   } catch (e) {
     console.error(`${tool} AI call failed:`, e?.message);
-    return json({ error: "Couldn't generate. Try again?" }, 502);
+    return json({ error: "Couldn't generate right now. Please try again \u2014 or WhatsApp us at +65 8057 6702 and we'll run it for you." }, 502);
   }
   const f = filterOutput(text);
   const shown = f.blocked ? FALLBACK_RESPONSE : text;

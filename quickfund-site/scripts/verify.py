@@ -207,6 +207,23 @@ check("Start Here button restarts the Check-Up", "setRunKey(k=>k+1)" in _qf and 
 check("result screen states when the copy arrives (channel-specific)",
       "What happens next:" in _qf and "one working day (Mon\u2013Fri" in _qf and "sentTo" in _qf)
 
+print("== 6d. Diagnostics endpoint ==")
+if _tok:
+    import urllib.request as _u
+    try: _u.urlopen(_u.Request(BASE + "/api/admin/health"), timeout=10); _st = 200
+    except Exception as _e: _st = getattr(_e, "code", 0)
+    check("health endpoint requires token", _st == 401)
+    _r = _u.Request(BASE + "/api/admin/health", headers={"Authorization": f"Bearer {_tok}"})
+    _d = json.loads(_u.urlopen(_r, timeout=20).read())
+    check("health reports provider + model",
+          _d.get("provider") in ("openrouter", "anthropic") and bool(_d.get("model")))
+    _blob = json.dumps(_d)
+    check("health reports env state without leaking values",
+          "env" in _d and "ANTHROPIC_API_KEY_set" in _d["env"] and "OPENROUTER_API_KEY_set" in _d["env"]
+          and "sk-" not in _blob)
+else:
+    print("  SKIP  health checks (set ADMIN_TOKEN)")
+
 print("== 7. aiGuard unit checks ==")
 unit = subprocess.run(["node", "--input-type=module", "-e", '''
 import { filterOutput, looksLikeInjection } from "./lib/aiGuard.js";
